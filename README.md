@@ -1,6 +1,142 @@
 # WP Meta Updater
 
-Une application Python avec interface graphique pour mettre à jour les meta title et description de votre site WordPress via l'API REST.
+A Python application with a graphical user interface to update meta title and description of your WordPress site via the REST API.
+
+*Une application Python avec interface graphique pour mettre à jour les meta title et description de votre site WordPress via l'API REST.*
+
+*Eine Python-Anwendung mit grafischer Benutzeroberfläche zur Aktualisierung von Meta-Titel und -Beschreibung Ihrer WordPress-Website über die REST-API.*
+
+*Una aplicación Python con interfaz gráfica para actualizar el meta título y la descripción de su sitio WordPress a través de la API REST.*
+
+## Features
+
+- Modern and intuitive graphical user interface with PyQt6
+- Connection via WordPress REST API with token authentication
+- Import current meta title and description from the site for all content types (posts, pages, products, etc.)
+- Export and import in CSV format
+- One-click update - update all or only selected items
+- Update scheduling - schedule one-time or recurring updates
+- Basic SEO analysis - identify titles and descriptions that are too short or too long
+- Multi-site support - manage multiple WordPress sites
+- Offline mode - work on data locally and synchronize later
+
+## Screenshots
+
+*Screenshots will be added here*
+
+## Prerequisites
+
+- Python 3.8 or higher
+- PyQt6
+- Requests
+- Pandas
+- Python-dateutil
+
+## Installation
+
+### Installing dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Launching the application
+
+```bash
+python wp_meta_updater.py
+```
+
+## Configuration
+
+### Obtaining a WordPress authentication token
+
+To use this application, you need to generate an authentication token for the WordPress REST API:
+
+1. Install the [Application Passwords](https://wordpress.org/plugins/application-passwords/) plugin on your WordPress site
+2. In your WordPress dashboard, go to Users > Your Profile
+3. Scroll down to the "Application Passwords" section
+4. Create a new application password named "WP Meta Updater"
+5. Copy the generated token and use it in the application
+
+## Usage
+
+### Connecting to WordPress
+
+1. Launch the application
+2. In the "Connection" tab, enter your WordPress site URL and authentication token
+3. Click on "Test Connection" to verify that everything is working correctly
+
+### Importing metadata
+
+1. Once connected, click on "Import from WordPress" to retrieve all SEO metadata
+2. The application will automatically retrieve all available content types (posts, pages, products, etc.)
+
+### Editing metadata
+
+1. In the "Metadata" tab, you can filter and search for specific items
+2. Double-click on an item to edit its SEO metadata
+3. Modified items are highlighted in yellow
+
+### Updating metadata
+
+1. Select the items you want to update
+2. Click on "Update Selected" or "Update All Modified"
+3. Confirm the update
+
+### CSV export and import
+
+1. To export metadata, click on "Export to CSV"
+2. To import metadata from a CSV file, click on "Import from CSV"
+
+### Scheduling updates
+
+1. In the "Scheduling" tab, click on "Schedule an Update"
+2. Configure the date, time, and recurrence options
+3. Select the items to update
+4. Click "OK" to schedule the update
+
+## Development
+
+### Project structure
+
+```
+wp-update/
+├── main.py                  # Main entry point
+├── wp_meta_updater.py       # Launch script
+├── wp_connector.py          # WordPress API connection module
+├── data_manager.py          # Data management module
+├── update_manager.py        # Update management module
+├── requirements.txt         # Python dependencies
+├── README.md                # Documentation
+├── ui/                      # User interface modules
+│   ├── main_window.py       # Main window
+│   ├── connection_widget.py # Connection widget
+│   ├── metadata_widget.py   # Metadata management widget
+│   ├── schedule_widget.py   # Scheduling widget
+│   ├── settings_widget.py   # Settings widget
+│   └── about_dialog.py      # About dialog box
+├── logs/                    # Application logs
+└── data/                    # Application data
+```
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+## Author
+
+William Troillard
+
+## Acknowledgments
+
+- [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) - Graphical user interface
+- [WordPress REST API](https://developer.wordpress.org/rest-api/) - WordPress REST API
+- [Requests](https://requests.readthedocs.io/) - HTTP library for Python
+- [Pandas](https://pandas.pydata.org/) - Data analysis and manipulation
+
+---
+
+# Documentation en Français
 
 ## Fonctionnalités
 
@@ -13,10 +149,6 @@ Une application Python avec interface graphique pour mettre à jour les meta tit
 - Analyse SEO basique - identifiez les titres et descriptions trop courts ou trop longs
 - Support multi-sites - gérez plusieurs sites WordPress
 - Mode hors ligne - travaillez sur les données en local et synchronisez ultérieurement
-
-## Captures d'écran
-
-*Des captures d'écran seront ajoutées ici*
 
 ## Prérequis
 
@@ -40,90 +172,46 @@ pip install -r requirements.txt
 python wp_meta_updater.py
 ```
 
-## Configuration
-
-### Obtention d'un jeton d'authentification WordPress
-
-Pour utiliser cette application, vous devez générer un jeton d'authentification pour l'API REST de WordPress :
-
-1. Installez le plugin [Application Passwords](https://wordpress.org/plugins/application-passwords/) sur votre site WordPress
-2. Dans votre tableau de bord WordPress, allez dans Utilisateurs > Votre profil
-3. Faites défiler jusqu'à la section "Mots de passe d'application"
-4. Créez un nouveau mot de passe d'application nommé "WP Meta Updater"
-5. Copiez le jeton généré et utilisez-le dans l'application
-
-## Utilisation
-
-### Connexion à WordPress
-
-1. Lancez l'application
-2. Dans l'onglet "Connexion", entrez l'URL de votre site WordPress et votre jeton d'authentification
-3. Cliquez sur "Tester la connexion" pour vérifier que tout fonctionne correctement
-
-### Importation des métadonnées
-
-1. Une fois connecté, cliquez sur "Importer depuis WordPress" pour récupérer toutes les métadonnées SEO
-2. L'application récupérera automatiquement tous les types de contenu disponibles (articles, pages, produits, etc.)
-
-### Modification des métadonnées
-
-1. Dans l'onglet "Métadonnées", vous pouvez filtrer et rechercher des éléments spécifiques
-2. Double-cliquez sur un élément pour modifier ses métadonnées SEO
-3. Les éléments modifiés sont mis en évidence en jaune
-
-### Mise à jour des métadonnées
-
-1. Sélectionnez les éléments que vous souhaitez mettre à jour
-2. Cliquez sur "Mettre à jour les sélectionnés" ou "Mettre à jour tous les modifiés"
-3. Confirmez la mise à jour
-
-### Exportation et importation CSV
-
-1. Pour exporter les métadonnées, cliquez sur "Exporter en CSV"
-2. Pour importer des métadonnées depuis un fichier CSV, cliquez sur "Importer depuis CSV"
-
-### Planification des mises à jour
-
-1. Dans l'onglet "Planification", cliquez sur "Planifier une mise à jour"
-2. Configurez la date, l'heure et les options de récurrence
-3. Sélectionnez les éléments à mettre à jour
-4. Cliquez sur "OK" pour planifier la mise à jour
-
-## Développement
-
-### Structure du projet
-
-```
-wp-update/
-├── main.py                  # Point d'entrée principal
-├── wp_meta_updater.py       # Script de lancement
-├── wp_connector.py          # Module de connexion à l'API WordPress
-├── data_manager.py          # Module de gestion des données
-├── update_manager.py        # Module de gestion des mises à jour
-├── requirements.txt         # Dépendances Python
-├── README.md                # Documentation
-├── ui/                      # Modules d'interface utilisateur
-│   ├── main_window.py       # Fenêtre principale
-│   ├── connection_widget.py # Widget de connexion
-│   ├── metadata_widget.py   # Widget de gestion des métadonnées
-│   ├── schedule_widget.py   # Widget de planification
-│   ├── settings_widget.py   # Widget de paramètres
-│   └── about_dialog.py      # Boîte de dialogue À propos
-├── logs/                    # Journaux d'application
-└── data/                    # Données de l'application
-```
-
 ## Licence
 
-Copyright © 2025 - Tous droits réservés
+Ce projet est sous licence GNU General Public License v3.0 - voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
-## Auteur
+---
 
-William Troillard
+# Dokumentation auf Deutsch
 
-## Remerciements
+## Funktionen
 
-- [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) - Interface graphique
-- [WordPress REST API](https://developer.wordpress.org/rest-api/) - API REST de WordPress
-- [Requests](https://requests.readthedocs.io/) - Bibliothèque HTTP pour Python
-- [Pandas](https://pandas.pydata.org/) - Analyse et manipulation de données
+- Moderne und intuitive grafische Benutzeroberfläche mit PyQt6
+- Verbindung über WordPress REST API mit Token-Authentifizierung
+- Import aktueller Meta-Titel und -Beschreibungen von der Website für alle Inhaltstypen (Beiträge, Seiten, Produkte usw.)
+- Export und Import im CSV-Format
+- Ein-Klick-Update - Aktualisieren Sie alle oder nur ausgewählte Elemente
+- Update-Planung - Planen Sie einmalige oder wiederkehrende Updates
+- Grundlegende SEO-Analyse - Identifizieren Sie zu kurze oder zu lange Titel und Beschreibungen
+- Multi-Site-Unterstützung - Verwalten Sie mehrere WordPress-Websites
+- Offline-Modus - Arbeiten Sie lokal an Daten und synchronisieren Sie später
+
+## Lizenz
+
+Dieses Projekt ist unter der GNU General Public License v3.0 lizenziert - siehe die [LICENSE](LICENSE)-Datei für Details.
+
+---
+
+# Documentación en Español
+
+## Características
+
+- Interfaz gráfica de usuario moderna e intuitiva con PyQt6
+- Conexión a través de la API REST de WordPress con autenticación por token
+- Importación de meta títulos y descripciones actuales del sitio para todos los tipos de contenido (entradas, páginas, productos, etc.)
+- Exportación e importación en formato CSV
+- Actualización con un clic - actualice todo o solo los elementos seleccionados
+- Programación de actualizaciones - programe actualizaciones únicas o recurrentes
+- Análisis SEO básico - identifique títulos y descripciones demasiado cortos o largos
+- Soporte multi-sitio - gestione múltiples sitios WordPress
+- Modo sin conexión - trabaje con datos localmente y sincronice más tarde
+
+## Licencia
+
+Este proyecto está licenciado bajo la GNU General Public License v3.0 - consulte el archivo [LICENSE](LICENSE) para más detalles.
