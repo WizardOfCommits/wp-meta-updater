@@ -1,10 +1,10 @@
-# WordPress Meta Updater - Documentation Officielle
+# WP Meta Updater - Documentation Officielle
 
 ## Introduction
 
-WordPress Meta Updater est une application complète pour gérer et mettre à jour les métadonnées SEO (meta title et meta description) de votre site WordPress. Disponible en version graphique (GUI) et en ligne de commande (CLI), cet outil vous permet d'optimiser efficacement le référencement de votre contenu WordPress.
+WP Meta Updater est une application complète pour gérer et mettre à jour les métadonnées SEO (meta title et meta description) de votre site WordPress. Disponible en version graphique (GUI) et en ligne de commande (CLI), cet outil vous permet d'optimiser efficacement le référencement de votre contenu WordPress.
 
-![Logo WordPress Meta Updater](ui/logo-wp-updater.png)
+![Logo WP Meta Updater](ui/logo-wp-updater.png)
 
 ## Table des matières
 
@@ -148,7 +148,7 @@ L'exécutable sera créé dans le dossier `build/wp_meta_updater/`.
 
 ### Authentification WordPress
 
-Pour utiliser WordPress Meta Updater, vous devez générer un jeton d'authentification :
+Pour utiliser WP Meta Updater, vous devez générer un jeton d'authentification :
 
 1. Installez le plugin [Application Passwords](https://wordpress.org/plugins/application-passwords/) sur votre site WordPress
 2. Dans votre tableau de bord WordPress, allez dans Utilisateurs > Votre profil
@@ -346,7 +346,7 @@ Les mises à jour planifiées s'exécuteront même si l'application est fermée 
 
 ## Extension Rank Math SEO
 
-WordPress Meta Updater est compatible avec l'extension Rank Math SEO API qui permet d'exposer les métadonnées Rank Math dans l'API REST de WordPress.
+WP Meta Updater est compatible avec l'extension Rank Math SEO API qui permet d'exposer les métadonnées Rank Math dans l'API REST de WordPress.
 
 ### Installation et configuration
 
@@ -357,9 +357,9 @@ WordPress Meta Updater est compatible avec l'extension Rank Math SEO API qui per
 5. Cochez la case "Activer Rank Math SEO dans l'API REST"
 6. Cliquez sur "Enregistrer les modifications"
 
-### Utilisation avec WordPress Meta Updater
+### Utilisation avec WP Meta Updater
 
-Une fois l'extension activée, WordPress Meta Updater pourra automatiquement :
+Une fois l'extension activée, WP Meta Updater pourra automatiquement :
 
 1. Détecter les champs Rank Math SEO (`rank_math_title` et `rank_math_description`)
 2. Importer ces métadonnées depuis WordPress

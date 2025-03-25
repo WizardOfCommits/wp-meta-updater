@@ -2,7 +2,14 @@
 
 A Python application with a graphical user interface to update meta title and description of your WordPress site via the REST API.
 
-## Documentation in different languages
+## Complete Documentation
+
+- [English Documentation](DOCUMENTATION_EN.md)
+- [French Documentation (Documentation Française)](DOCUMENTATION.md)
+- [Spanish Documentation (Documentación en Español)](DOCUMENTATION_ES.md)
+- [German Documentation (Deutsche Dokumentation)](DOCUMENTATION_DE.md)
+
+## Quick Start Documentation in different languages
 
 - [English](README_EN.md)
 - [Français](README_FR.md)
