@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Environments
+venv/
+env/
+ENV/
+
+# Local configuration
+*.ini
+*.conf
+*.cfg
+.env
+
+# Logs
+logs/
+*.log
+
+# Database files
+*.db
+*.sqlite3
+
+# Session data
+data/session_data.json
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Compiled executables
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Specific to this project
+wp_meta_updater.spec
