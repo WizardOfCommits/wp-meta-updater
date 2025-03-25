@@ -257,8 +257,48 @@ class ConnectionWidget(QWidget):
         # Configuration du connecteur
         self.wp_connector.configure(site_url, auth_token, site_name, username)
         
-        # Test de la connexion
-        success, message = self.wp_connector.test_connection()
+        # Désactivation du bouton de test pendant la connexion
+        self.test_button.setEnabled(False)
+        self.test_button.setText("Connexion en cours...")
+        
+        # Test de la connexion dans un thread séparé
+        import threading
+        
+        def test_connection_thread():
+            try:
+                # Test de la connexion dans un thread séparé
+                success, message = self.wp_connector.test_connection()
+                
+                # Traitement du résultat dans le thread principal
+                from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
+                QMetaObject.invokeMethod(
+                    self, 
+                    "_handle_connection_result", 
+                    Qt.ConnectionType.QueuedConnection,
+                    Q_ARG(bool, success),
+                    Q_ARG(str, message)
+                )
+            except Exception as e:
+                # Gestion des erreurs
+                from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
+                QMetaObject.invokeMethod(
+                    self, 
+                    "_handle_connection_result", 
+                    Qt.ConnectionType.QueuedConnection,
+                    Q_ARG(bool, False),
+                    Q_ARG(str, str(e))
+                )
+        
+        # Lancement du thread
+        thread = threading.Thread(target=test_connection_thread)
+        thread.daemon = True
+        thread.start()
+    
+    def _handle_connection_result(self, success: bool, message: str) -> None:
+        """Gère le résultat du test de connexion"""
+        # Réactivation du bouton de test
+        self.test_button.setEnabled(True)
+        self.test_button.setText("Tester la connexion")
         
         if success:
             QMessageBox.information(
@@ -269,7 +309,7 @@ class ConnectionWidget(QWidget):
             )
             
             # Mise à jour du nom du site si nécessaire
-            if self.wp_connector.site_name != site_name:
+            if self.wp_connector.site_name != self.site_name_edit.text():
                 self.site_name_edit.setText(self.wp_connector.site_name)
             
             # Sauvegarde automatique des paramètres

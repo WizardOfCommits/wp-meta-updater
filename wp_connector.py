@@ -52,6 +52,8 @@ class WordPressConnector:
         self.site_name = ""
         self.max_workers = 5  # Nombre maximum de threads pour les requêtes parallèles
         self.custom_types = []  # Types de contenu personnalisés
+        self._cached_headers = None  # Cache pour les en-têtes HTTP
+        self._headers_initialized = False  # Indicateur d'initialisation des en-têtes
     
     def configure(self, site_url: str, auth_token: str, site_name: str = "", username: str = "") -> None:
         """Configure les paramètres de connexion à l'API"""
@@ -66,9 +68,17 @@ class WordPressConnector:
         self.username = username
         self.site_name = site_name or site_url.replace('https://', '').replace('http://', '').split('/')[0]
         self.logger.info(f"Configuration de la connexion à {self.site_name}")
+        
+        # Réinitialisation du cache des en-têtes lors d'un changement de configuration
+        self._cached_headers = None
+        self._headers_initialized = False
     
     def get_headers(self) -> Dict[str, str]:
         """Retourne les en-têtes HTTP pour les requêtes API"""
+        # Si les en-têtes sont déjà en cache et que les informations d'authentification n'ont pas changé, les réutiliser
+        if self._cached_headers is not None and self._headers_initialized:
+            return self._cached_headers
+        
         import base64
         import random
         import socket
@@ -83,16 +93,18 @@ class WordPressConnector:
             "Pragma": "no-cache"
         }
         
-        # Journalisation du jeton d'authentification (masqué pour la sécurité)
-        token_preview = self.auth_token[:4] + "..." + self.auth_token[-4:] if len(self.auth_token) > 8 else "***"
-        self.logger.info(f"Génération des en-têtes d'authentification pour le jeton: {token_preview}")
+        # Journalisation du jeton d'authentification (masqué pour la sécurité) - uniquement lors de l'initialisation
+        if not self._headers_initialized:
+            token_preview = self.auth_token[:4] + "..." + self.auth_token[-4:] if len(self.auth_token) > 8 else "***"
+            self.logger.info(f"Génération des en-têtes d'authentification pour le jeton: {token_preview}")
         
         # Détermination du nom d'utilisateur et du mot de passe
         # Utiliser le nom d'utilisateur spécifié s'il existe
         if hasattr(self, 'username') and self.username:
             username = self.username
             password = self.auth_token
-            self.logger.info(f"Utilisation du nom d'utilisateur personnalisé: {username}")
+            if not self._headers_initialized:
+                self.logger.info(f"Utilisation du nom d'utilisateur personnalisé: {username}")
         else:
             # Comportement de secours - essayer de déterminer le nom d'utilisateur à partir du token
             # Format spécifique pour Application Passwords WordPress
@@ -110,18 +122,22 @@ class WordPressConnector:
                     # C'est probablement un mot de passe d'application complet
                     username = "admin"  # Nom d'utilisateur par défaut
                     password = self.auth_token
-                    self.logger.info(f"Détection d'un Application Password WordPress (format complet)")
+                    if not self._headers_initialized:
+                        self.logger.info(f"Détection d'un Application Password WordPress (format complet)")
                 else:
                     # Format "username password"
                     username, password = self.auth_token.split(' ', 1)
-                    self.logger.info(f"Détection du format username password: {username}")
+                    if not self._headers_initialized:
+                        self.logger.info(f"Détection du format username password: {username}")
             else:
                 # Si pas d'espace, on utilise un nom d'utilisateur par défaut
                 username = "admin"  # Nom d'utilisateur par défaut
                 password = self.auth_token
-                self.logger.info(f"Utilisation du format simple token avec nom d'utilisateur par défaut: {username}")
+                if not self._headers_initialized:
+                    self.logger.info(f"Utilisation du format simple token avec nom d'utilisateur par défaut: {username}")
         
-        self.logger.info(f"Utilisation de l'authentification Basic pour '{username}'")
+        if not self._headers_initialized:
+            self.logger.info(f"Utilisation de l'authentification Basic pour '{username}'")
         
         # Création de la chaîne d'authentification au format username:password
         auth_string = f"{username}:{password}"
@@ -130,16 +146,21 @@ class WordPressConnector:
         auth_encoded = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
         headers["Authorization"] = f"Basic {auth_encoded}"
         
-        # Journalisation des en-têtes générés (masqués pour la sécurité)
-        headers_log = headers.copy()
-        if "Authorization" in headers_log:
-            auth_value = headers_log["Authorization"]
-            if auth_value.startswith("Basic "):
-                headers_log["Authorization"] = "Basic ****"
-            elif auth_value.startswith("Bearer "):
-                headers_log["Authorization"] = "Bearer ****"
+        # Journalisation des en-têtes générés (masqués pour la sécurité) - uniquement lors de l'initialisation
+        if not self._headers_initialized:
+            headers_log = headers.copy()
+            if "Authorization" in headers_log:
+                auth_value = headers_log["Authorization"]
+                if auth_value.startswith("Basic "):
+                    headers_log["Authorization"] = "Basic ****"
+                elif auth_value.startswith("Bearer "):
+                    headers_log["Authorization"] = "Bearer ****"
+            
+            self.logger.info(f"En-têtes générés: {headers_log}")
+            self._headers_initialized = True
         
-        self.logger.info(f"En-têtes générés: {headers_log}")
+        # Mise en cache des en-têtes pour les réutiliser
+        self._cached_headers = headers
         
         return headers
     
@@ -369,15 +390,45 @@ class WordPressConnector:
             
             # Récupération des pages restantes en parallèle si nécessaire
             if total_pages > 1:
-                with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                    future_to_page = {
-                        executor.submit(self.fetch_content_items, content_type, p, 100, category): p
-                        for p in range(2, total_pages + 1)
-                    }
+                # Réduction du nombre de workers pour éviter de surcharger le serveur
+                max_workers = min(self.max_workers, 3)  # Limiter à 3 workers maximum
+                
+                # Ajout d'un délai entre les requêtes pour éviter les limitations de taux
+                delay_between_batches = 0.5  # 500ms entre chaque lot de requêtes
+                
+                # Traitement par lots pour mieux gérer les ressources
+                batch_size = 5  # Nombre de pages à traiter en parallèle
+                
+                for batch_start in range(2, total_pages + 1, batch_size):
+                    batch_end = min(batch_start + batch_size, total_pages + 1)
                     
-                    for future in future_to_page:
-                        page_items, _, _ = future.result()
-                        items.extend(page_items)
+                    self.logger.info(f"Traitement du lot de pages {batch_start}-{batch_end-1} sur {total_pages} pour {content_type}")
+                    
+                    try:
+                        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                            future_to_page = {
+                                executor.submit(self.fetch_content_items, content_type, p, 100, category): p
+                                for p in range(batch_start, batch_end)
+                            }
+                            
+                            # Utilisation de as_completed pour traiter les résultats au fur et à mesure
+                            from concurrent.futures import as_completed
+                            for future in as_completed(future_to_page):
+                                try:
+                                    page = future_to_page[future]
+                                    page_items, _, _ = future.result(timeout=30)  # Timeout de 30 secondes
+                                    items.extend(page_items)
+                                    self.logger.info(f"Page {page}/{total_pages} traitée pour {content_type}")
+                                except Exception as e:
+                                    self.logger.error(f"Erreur lors du traitement de la page {future_to_page[future]}: {str(e)}")
+                    except KeyboardInterrupt:
+                        self.logger.warning("Interruption utilisateur détectée, arrêt de la récupération des données")
+                        break
+                    
+                    # Pause entre les lots pour éviter de surcharger le serveur
+                    if batch_end < total_pages + 1:
+                        import time
+                        time.sleep(delay_between_batches)
             
             result[content_type] = items
             self.logger.info(f"Total de {len(items)} {content_type}s récupérés")

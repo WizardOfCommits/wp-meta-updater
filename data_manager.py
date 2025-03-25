@@ -368,21 +368,50 @@ class DataManager(QObject):
                             processed += 1
                             self.import_progress.emit(processed, total_items, f"Traitement de {content_type} {item.get('id', 'inconnu')}")
                             
-                            # Extraction des métadonnées SEO simplifiée
+                            # Extraction des métadonnées SEO
                             title_value = item.get("title", {}).get("rendered", "") if isinstance(item.get("title"), dict) else item.get("title", "")
-                            metadata = {
-                                "id": item.get("id", 0),
-                                "type": content_type,
-                                "title": title_value,
-                                "url": item.get("link", ""),
-                                "date_modified": item.get("modified", ""),
-                                "seo_title": title_value,
-                                "seo_description": "",
-                                "original_seo_title": title_value,
-                                "original_seo_description": "",
-                                "title_h1": title_value,
-                                "original_title_h1": title_value
-                            }
+                            
+                            # Utilisation du connecteur WordPress pour extraire les métadonnées SEO
+                            if hasattr(self, 'wp_connector') and self.wp_connector:
+                                # Si le connecteur WordPress est disponible, utiliser sa méthode d'extraction
+                                try:
+                                    metadata = self.wp_connector.extract_seo_metadata(item)
+                                    # S'assurer que le titre est correctement défini
+                                    if not metadata.get("title"):
+                                        metadata["title"] = title_value
+                                    # S'assurer que le type est correctement défini
+                                    metadata["type"] = content_type
+                                except Exception as extract_error:
+                                    self.logger.warning(f"Erreur lors de l'extraction des métadonnées SEO: {str(extract_error)}")
+                                    # Fallback en cas d'erreur
+                                    metadata = {
+                                        "id": item.get("id", 0),
+                                        "type": content_type,
+                                        "title": title_value,
+                                        "url": item.get("link", ""),
+                                        "date_modified": item.get("modified", ""),
+                                        "seo_title": title_value,
+                                        "seo_description": "",
+                                        "original_seo_title": title_value,
+                                        "original_seo_description": "",
+                                        "title_h1": title_value,
+                                        "original_title_h1": title_value
+                                    }
+                            else:
+                                # Fallback si le connecteur WordPress n'est pas disponible
+                                metadata = {
+                                    "id": item.get("id", 0),
+                                    "type": content_type,
+                                    "title": title_value,
+                                    "url": item.get("link", ""),
+                                    "date_modified": item.get("modified", ""),
+                                    "seo_title": title_value,
+                                    "seo_description": "",
+                                    "original_seo_title": title_value,
+                                    "original_seo_description": "",
+                                    "title_h1": title_value,
+                                    "original_title_h1": title_value
+                                }
                             
                             # Ajout des métadonnées à la liste
                             self.data[content_type].append(metadata)

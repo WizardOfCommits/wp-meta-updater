@@ -189,18 +189,25 @@ class ScheduleDialog(QDialog):
         # Options de sélection
         options_layout = QHBoxLayout()
         
+        # Groupe de boutons radio pour l'exclusion mutuelle
+        from PyQt6.QtWidgets import QButtonGroup, QRadioButton
+        
+        self.selection_group = QButtonGroup(self)
+        
         # Option Tous les éléments modifiés
-        self.all_modified_radio = QCheckBox("Tous les éléments modifiés")
+        self.all_modified_radio = QRadioButton("Tous les éléments modifiés")
         self.all_modified_radio.setChecked(True)
+        self.selection_group.addButton(self.all_modified_radio)
         options_layout.addWidget(self.all_modified_radio)
         
         # Option Éléments sélectionnés uniquement
-        self.selected_only_radio = QCheckBox("Éléments sélectionnés uniquement")
+        self.selected_only_radio = QRadioButton("Éléments sélectionnés uniquement")
+        self.selection_group.addButton(self.selected_only_radio)
         options_layout.addWidget(self.selected_only_radio)
         
-        # Connexion des signaux pour exclusion mutuelle
-        self.all_modified_radio.stateChanged.connect(self.on_all_modified_changed)
-        self.selected_only_radio.stateChanged.connect(self.on_selected_only_changed)
+        # Connexion des signaux
+        self.all_modified_radio.toggled.connect(self.update_items_info)
+        self.selected_only_radio.toggled.connect(self.update_items_info)
         
         items_layout.addLayout(options_layout)
         
@@ -221,23 +228,8 @@ class ScheduleDialog(QDialog):
         """Gestion du changement d'état de la case à cocher pour la récurrence"""
         self.interval_spin.setEnabled(state == Qt.CheckState.Checked.value)
     
-    def on_all_modified_changed(self, state: int) -> None:
-        """Gestion du changement d'état de la case à cocher pour tous les éléments modifiés"""
-        if state == Qt.CheckState.Checked.value:
-            self.selected_only_radio.setChecked(False)
-        elif state == Qt.CheckState.Unchecked.value and not self.selected_only_radio.isChecked():
-            self.selected_only_radio.setChecked(True)
-        
-        self.update_items_info()
-    
-    def on_selected_only_changed(self, state: int) -> None:
-        """Gestion du changement d'état de la case à cocher pour les éléments sélectionnés uniquement"""
-        if state == Qt.CheckState.Checked.value:
-            self.all_modified_radio.setChecked(False)
-        elif state == Qt.CheckState.Unchecked.value and not self.all_modified_radio.isChecked():
-            self.all_modified_radio.setChecked(True)
-        
-        self.update_items_info()
+    # Les méthodes on_all_modified_changed et on_selected_only_changed ne sont plus nécessaires
+    # car les boutons radio gèrent automatiquement l'exclusion mutuelle
     
     def update_items_info(self) -> None:
         """Mise à jour des informations sur les éléments"""
@@ -258,7 +250,7 @@ class ScheduleDialog(QDialog):
         """Récupère les paramètres de planification"""
         return {
             "name": self.name_edit.text(),
-            "schedule_time": self.datetime_edit.dateTime().toPython(),
+            "schedule_time": self.datetime_edit.dateTime().toPyDateTime(),
             "recurring": self.recurring_check.isChecked(),
             "interval_days": self.interval_spin.value() if self.recurring_check.isChecked() else 0,
             "selected_only": self.selected_only_radio.isChecked()

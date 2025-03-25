@@ -203,6 +203,9 @@ class MainWindow(QMainWindow):
         self.wp_connector = WordPressConnector(self.logger)
         self.data_manager = DataManager(self.logger)
         
+        # Ajout du connecteur WordPress au gestionnaire de données
+        self.data_manager.wp_connector = self.wp_connector
+        
         # Importation conditionnelle du connecteur MySQL (conservé pour la ligne de commande)
         try:
             from wp_meta_direct_update import WordPressDirectConnector, MYSQL_AVAILABLE

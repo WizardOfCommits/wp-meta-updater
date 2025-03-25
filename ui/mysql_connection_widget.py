@@ -247,8 +247,48 @@ class MySQLConnectionWidget(QWidget):
         # Configuration du connecteur
         self.wp_direct_connector.configure(host, user, password, database, prefix)
         
-        # Test de la connexion
-        if self.wp_direct_connector.connect():
+        # Désactivation du bouton de test pendant la connexion
+        self.test_button.setEnabled(False)
+        self.test_button.setText("Connexion en cours...")
+        
+        # Test de la connexion dans un thread séparé
+        import threading
+        
+        def test_connection_thread():
+            try:
+                # Test de la connexion dans un thread séparé
+                success = self.wp_direct_connector.connect()
+                
+                # Traitement du résultat dans le thread principal
+                from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
+                QMetaObject.invokeMethod(
+                    self, 
+                    "_handle_connection_result", 
+                    Qt.ConnectionType.QueuedConnection,
+                    Q_ARG(bool, success)
+                )
+            except Exception as e:
+                # Gestion des erreurs
+                from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
+                QMetaObject.invokeMethod(
+                    self, 
+                    "_handle_connection_error", 
+                    Qt.ConnectionType.QueuedConnection,
+                    Q_ARG(str, str(e))
+                )
+        
+        # Lancement du thread
+        thread = threading.Thread(target=test_connection_thread)
+        thread.daemon = True
+        thread.start()
+    
+    def _handle_connection_result(self, success: bool) -> None:
+        """Gère le résultat du test de connexion"""
+        # Réactivation du bouton de test
+        self.test_button.setEnabled(True)
+        self.test_button.setText("Tester la connexion")
+        
+        if success:
             QMessageBox.information(
                 self,
                 "Succès",
@@ -271,6 +311,22 @@ class MySQLConnectionWidget(QWidget):
             
             # Émission du signal de connexion échouée
             self.connection_successful.emit(False, "Échec de la connexion MySQL")
+    
+    def _handle_connection_error(self, error_message: str) -> None:
+        """Gère les erreurs de connexion"""
+        # Réactivation du bouton de test
+        self.test_button.setEnabled(True)
+        self.test_button.setText("Tester la connexion")
+        
+        QMessageBox.warning(
+            self,
+            "Erreur",
+            f"Erreur lors de la connexion à la base de données: {error_message}",
+            QMessageBox.StandardButton.Ok
+        )
+        
+        # Émission du signal de connexion échouée
+        self.connection_successful.emit(False, f"Erreur lors de la connexion MySQL: {error_message}")
     
     @pyqtSlot()
     def on_save_settings(self) -> None:

@@ -650,6 +650,7 @@ class MetadataWidget(QWidget):
         self.table_view.setAlternatingRowColors(True)
         self.table_view.setSortingEnabled(True)
         self.table_view.doubleClicked.connect(self.on_table_double_clicked)
+        self.table_view.clicked.connect(self.on_table_clicked)
         
         # Configuration des en-têtes
         self.table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
@@ -744,6 +745,39 @@ class MetadataWidget(QWidget):
         total_count = sum(len(items) for items in self.data_manager.data.values())
         
         self.status_label.setText(f"{filtered_count} éléments affichés sur {total_count}")
+    
+    @pyqtSlot(QModelIndex)
+    def on_table_clicked(self, index: QModelIndex) -> None:
+        """Gestion du clic sur le tableau"""
+        if not self.data_manager:
+            return
+        
+        # Récupération de l'index source
+        source_index = self.proxy_model.mapToSource(index)
+        
+        if not source_index.isValid():
+            return
+        
+        # Vérification si le clic est sur la première colonne (case à cocher)
+        if source_index.column() == 0:
+            # Récupération de l'élément
+            row = source_index.row()
+            
+            if row >= len(self.data_manager.filtered_data):
+                return
+            
+            item = self.data_manager.filtered_data[row]
+            
+            # Basculement de l'état de sélection
+            is_selected = item["id"] in self.data_manager.selected_items
+            self.data_manager.select_item(item["id"], not is_selected)
+            
+            # Rafraîchissement de la ligne
+            self.table_model.dataChanged.emit(
+                self.table_model.index(row, 0),
+                self.table_model.index(row, 0),
+                [Qt.ItemDataRole.CheckStateRole]
+            )
     
     @pyqtSlot(QModelIndex)
     def on_table_double_clicked(self, index: QModelIndex) -> None:
@@ -965,20 +999,72 @@ class MetadataWidget(QWidget):
         # Récupération de la catégorie sélectionnée
         selected_category = self.category_combo.currentData()
         
-        # Affichage de la barre de progression
+        # Affichage de la barre de progression et du message d'attente
         self.progress_bar.setVisible(True)
         self.progress_bar.setValue(0)
-        self.status_label.setText("Importation des données depuis WordPress...")
-        self.status_message.emit("Importation des données depuis WordPress...")
+        self.progress_bar.setMaximum(0)  # Mode indéterminé
+        self.status_label.setText("Connexion à WordPress et récupération des données...")
+        self.status_message.emit("Connexion à WordPress et récupération des données...")
         
         # Mise à jour des types de contenu
         self.update_content_types()
         
-        # Récupération des données
-        content_data = self.wp_connector.fetch_all_content(selected_types, selected_category)
+        # Création d'un thread pour récupérer les données
+        import threading
+        
+        def fetch_data_thread():
+            try:
+                # Récupération des données dans un thread séparé
+                content_data = self.wp_connector.fetch_all_content(selected_types, selected_category)
+                
+                # Traitement des données dans le thread principal
+                from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
+                QMetaObject.invokeMethod(
+                    self, 
+                    "_process_imported_data", 
+                    Qt.ConnectionType.QueuedConnection,
+                    Q_ARG(dict, content_data)
+                )
+            except Exception as e:
+                # Gestion des erreurs
+                from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
+                QMetaObject.invokeMethod(
+                    self, 
+                    "_handle_import_error", 
+                    Qt.ConnectionType.QueuedConnection,
+                    Q_ARG(str, str(e))
+                )
+        
+        # Lancement du thread
+        thread = threading.Thread(target=fetch_data_thread)
+        thread.daemon = True
+        thread.start()
+    
+    def _process_imported_data(self, content_data: dict) -> None:
+        """Traite les données importées depuis WordPress"""
+        # Passage en mode déterminé pour la barre de progression
+        self.progress_bar.setMaximum(100)
+        self.status_label.setText("Traitement des données importées...")
+        self.status_message.emit("Traitement des données importées...")
         
         # Importation des données
         self.data_manager.import_from_wp(content_data)
+    
+    def _handle_import_error(self, error_message: str) -> None:
+        """Gère les erreurs d'importation"""
+        # Masquage de la barre de progression
+        self.progress_bar.setVisible(False)
+        
+        # Affichage de l'erreur
+        self.status_label.setText(f"Erreur lors de l'importation: {error_message}")
+        self.status_message.emit(f"Erreur lors de l'importation: {error_message}")
+        
+        QMessageBox.critical(
+            self,
+            "Erreur d'importation",
+            f"Une erreur est survenue lors de l'importation des données:\n\n{error_message}",
+            QMessageBox.StandardButton.Ok
+        )
     
     @pyqtSlot()
     def export_to_csv(self) -> None:
